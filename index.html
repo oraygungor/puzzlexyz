@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sudoku Oynayıcı</title>
+    <title>Sudoku Player</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -112,7 +112,7 @@
 <body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
 
     <div class="w-full max-w-lg mx-auto">
-        <h1 class="text-4xl font-bold text-center text-gray-800 mb-4">Sudoku Oynayıcı</h1>
+        <h1 class="text-4xl font-bold text-center text-gray-800 mb-4">Sudoku Player</h1>
         
         <p id="message-area" class="text-center text-red-600 mb-4 h-6 font-semibold"></p>
 
@@ -121,26 +121,26 @@
         </div>
 
         <div class="mt-4 text-center">
-            <h3 class="text-lg font-semibold text-gray-700">Giriş Araçları</h3>
+            <h3 class="text-lg font-semibold text-gray-700">Input Tools</h3>
             <div class="flex justify-center flex-wrap items-center gap-2 my-2">
                 <div id="number-palette" class="flex justify-center flex-wrap gap-1 sm:gap-2"></div>
-                <button id="note-mode-btn" class="mode-btn px-4 py-2 h-12 bg-white text-gray-800 font-semibold rounded-md shadow-sm border">Not Modu</button>
+                <button id="note-mode-btn" class="mode-btn px-4 py-2 h-12 bg-white text-gray-800 font-semibold rounded-md shadow-sm border">Note Mode</button>
             </div>
         </div>
 
         <div class="flex justify-center flex-wrap gap-2 mt-4">
-            <button id="load-btn" class="px-6 py-2 bg-yellow-500 text-white font-semibold rounded-lg shadow-md hover:bg-yellow-600">Bulmacayı Yükle</button>
-            <button id="clear-btn" class="px-6 py-2 bg-gray-800 text-white font-semibold rounded-lg shadow-md hover:bg-gray-900">Girişleri Temizle</button>
+            <button id="load-btn" class="px-6 py-2 bg-yellow-500 text-white font-semibold rounded-lg shadow-md hover:bg-yellow-600">Load Puzzle</button>
+            <button id="clear-btn" class="px-6 py-2 bg-gray-800 text-white font-semibold rounded-lg shadow-md hover:bg-gray-900">Clear Inputs</button>
         </div>
     </div>
 
     <div id="modal" class="modal-overlay hidden">
         <div class="modal-content">
-            <h2 id="modal-title" class="text-2xl font-bold mb-4">Bulmaca Kodunu Yükle</h2>
-            <textarea id="modal-textarea" class="w-full h-32 p-2 border rounded-md mb-4 font-mono text-sm" placeholder="Bulmaca kodunuzu buraya yapıştırın..."></textarea>
+            <h2 id="modal-title" class="text-2xl font-bold mb-4">Load Puzzle Code</h2>
+            <textarea id="modal-textarea" class="w-full h-32 p-2 border rounded-md mb-4 font-mono text-sm" placeholder="Paste your puzzle code here..."></textarea>
             <div class="flex justify-end space-x-2">
-                <button id="modal-action-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Bulmacayı Yükle</button>
-                <button id="modal-close-btn" class="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400">Kapat</button>
+                <button id="modal-action-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Load Puzzle</button>
+                <button id="modal-close-btn" class="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400">Close</button>
             </div>
         </div>
     </div>
@@ -173,17 +173,17 @@
             createNumberPalette();
             addEventListeners();
             setCurrentTool('number-1');
-            messageArea.textContent = 'Başlamak için bir bulmaca yükleyin!';
+            messageArea.textContent = 'Load a puzzle to begin!';
         }
 
         function addEventListeners() {
             document.getElementById('load-btn').addEventListener('click', showLoadModal);
             document.getElementById('clear-btn').addEventListener('click', () => {
-                if (window.confirm("Emin misiniz? Bu, tüm girişlerinizi ve notlarınızı temizleyecektir.")) {
+                if (window.confirm("Are you sure? This will clear all your entries and notes.")) {
                     currentBoard = givenBoard.map(row => [...row]);
                     notesBoard = Array(9).fill().map(() => Array(9).fill().map(() => new Set()));
                     createGrid();
-                    messageArea.textContent = 'Tahta temizlendi.';
+                    messageArea.textContent = 'Board cleared.';
                 }
             });
             noteModeBtn.addEventListener('click', toggleNoteMode);
@@ -280,9 +280,9 @@
                 notesBoard = Array(9).fill().map(() => Array(9).fill().map(() => new Set()));
                 createGrid();
                 document.getElementById('modal').classList.add('hidden');
-                messageArea.textContent = "Bulmaca başarıyla yüklendi!";
+                messageArea.textContent = "Puzzle loaded successfully!";
             } catch (e) {
-                alert("Geçersiz bulmaca kodu.");
+                alert("Invalid puzzle code.");
             }
         }
 
@@ -407,7 +407,7 @@
                 }
             }
             messageArea.style.color = 'green';
-            messageArea.textContent = 'Tebrikler! Bulmacayı çözdünüz! 🎉';
+            messageArea.textContent = 'Congratulations! You solved the puzzle! 🎉';
         }
 
         // --- Sudoku Validation Logic ---
@@ -416,13 +416,13 @@
 
             // 1. Standard Sudoku: Row, Column, Box
             for (let x = 0; x < 9; x++) {
-                if (x !== col && board[row][x] === num) return `Geçersiz: ${num} zaten bu satırda.`;
-                if (x !== row && board[x][col] === num) return `Geçersiz: ${num} zaten bu sütunda.`;
+                if (x !== col && board[row][x] === num) return `Invalid: ${num} is already in this row.`;
+                if (x !== row && board[x][col] === num) return `Invalid: ${num} is already in this column.`;
             }
             const startRow = row - row % 3, startCol = col - col % 3;
             for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
                 if ((i + startRow !== row || j + startCol !== col) && board[i + startRow][j + startCol] === num) {
-                    return `Geçersiz: ${num} zaten bu 3x3 kutuda.`;
+                    return `Invalid: ${num} is already in this 3x3 box.`;
                 }
             }
 
@@ -430,12 +430,12 @@
             const constraint = constraints[key];
 
             // 2. Custom Constraints
-            if (constraint === 'even' && num % 2 !== 0) return `Geçersiz: Bu hücre çift olmalı.`;
-            if (constraint === 'odd' && num % 2 === 0) return `Geçersiz: Bu hücre tek olmalı.`;
+            if (constraint === 'even' && num % 2 !== 0) return `Invalid: This cell must be even.`;
+            if (constraint === 'odd' && num % 2 === 0) return `Invalid: This cell must be odd.`;
             if (constraint === 'yellow') {
                 for(let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) {
                     if ((r !== row || c !== col) && constraints[`${r},${c}`] === 'yellow' && board[r][c] === num) {
-                        return `Geçersiz: ${num} zaten sarı bölgede.`;
+                        return `Invalid: ${num} is already in the yellow region.`;
                     }
                 }
             }
@@ -444,11 +444,11 @@
                 if (thermoIndex !== -1) {
                     if (thermoIndex > 0) {
                         const prevVal = board[thermo[thermoIndex-1][0]][thermo[thermoIndex-1][1]];
-                        if (prevVal !== 0 && num <= prevVal) return `Geçersiz: Termometrede ${prevVal}'den büyük olmalı.`;
+                        if (prevVal !== 0 && num <= prevVal) return `Invalid: Must be > ${prevVal} on thermometer.`;
                     }
                     if (thermoIndex < thermo.length - 1) {
                         const nextVal = board[thermo[thermoIndex+1][0]][thermo[thermoIndex+1][1]];
-                        if (nextVal !== 0 && num >= nextVal) return `Geçersiz: Termometrede ${nextVal}'den küçük olmalı.`;
+                        if (nextVal !== 0 && num >= nextVal) return `Invalid: Must be < ${nextVal} on thermometer.`;
                     }
                 }
             }
@@ -457,7 +457,7 @@
                 for (const [dr, dc] of orthoDirections) {
                     const nr = row + dr, nc = col + dc;
                     if (nr >= 0 && nr < 9 && nc >= 0 && nc < 9 && board[nr][nc] !== 0 && num <= board[nr][nc]) {
-                        return `Geçersiz: Bu 'Max' hücre komşusundan (${board[nr][nc]}) büyük olmalı.`;
+                        return `Invalid: This 'Max' cell must be > its neighbor (${board[nr][nc]}).`;
                     }
                 }
             }
@@ -465,7 +465,7 @@
                 for (const [dr, dc] of orthoDirections) {
                     const nr = row + dr, nc = col + dc;
                     if (nr >= 0 && nr < 9 && nc >= 0 && nc < 9 && board[nr][nc] !== 0 && num >= board[nr][nc]) {
-                         return `Geçersiz: Bu 'Min' hücre komşusundan (${board[nr][nc]}) küçük olmalı.`;
+                         return `Invalid: This 'Min' cell must be < its neighbor (${board[nr][nc]}).`;
                     }
                 }
             }
@@ -475,8 +475,8 @@
                     const neighborConstraint = constraints[`${nr},${nc}`];
                     const neighborValue = board[nr][nc];
                     if (neighborValue !== 0) {
-                        if (neighborConstraint === 'max' && neighborValue <= num) return `Geçersiz: Komşu 'Max' kuralını ihlal ediyor.`;
-                        if (neighborConstraint === 'min' && neighborValue >= num) return `Geçersiz: Komşu 'Min' kuralını ihlal ediyor.`;
+                        if (neighborConstraint === 'max' && neighborValue <= num) return `Invalid: Violates neighbor 'Max' rule.`;
+                        if (neighborConstraint === 'min' && neighborValue >= num) return `Invalid: Violates neighbor 'Min' rule.`;
                     }
                 }
             }
