@@ -162,6 +162,7 @@
         </div>
 
         <div class="flex justify-center flex-wrap gap-2 mt-8">
+            <button id="back-btn" class="px-6 py-2 bg-purple-600 text-white font-semibold rounded-lg shadow-md hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>Back</button>
             <button id="load-btn" class="px-6 py-2 bg-yellow-500 text-white font-semibold rounded-lg shadow-md hover:bg-yellow-600">Load Puzzle</button>
             <button id="clear-btn" class="px-6 py-2 bg-gray-800 text-white font-semibold rounded-lg shadow-md hover:bg-gray-900">Clear Inputs</button>
         </div>
@@ -195,11 +196,13 @@
         const boardElement = document.getElementById('sudoku-board');
         const messageArea = document.getElementById('message-area');
         const numpad = document.getElementById('numpad');
+        const backBtn = document.getElementById('back-btn');
         
         // --- Game State ---
         let givenBoard = [];
         let currentBoard = [];
         let notesBoard = [];
+        let moveHistory = [];
         let constraints = {};
         let thermometers = [];
         let activeCell = null;
@@ -210,20 +213,25 @@
             givenBoard = emptyBoard.map(row => [...row]);
             currentBoard = emptyBoard.map(row => [...row]);
             notesBoard = Array(9).fill().map(() => Array(9).fill().map(() => new Set()));
+            moveHistory = [];
             constraints = {};
             thermometers = [];
             createGrid();
             createNumpad();
             addEventListeners();
+            updateBackButtonState();
             messageArea.textContent = 'Load a puzzle to begin!';
         }
 
         function addEventListeners() {
+            backBtn.addEventListener('click', undoMove);
             document.getElementById('load-btn').addEventListener('click', showLoadModal);
             document.getElementById('clear-btn').addEventListener('click', () => {
                 if (window.confirm("Are you sure? This will clear all your entries and notes.")) {
                     currentBoard = givenBoard.map(row => [...row]);
                     notesBoard = Array(9).fill().map(() => Array(9).fill().map(() => new Set()));
+                    moveHistory = [];
+                    updateBackButtonState();
                     createGrid();
                     messageArea.textContent = 'Board cleared.';
                 }
@@ -336,6 +344,8 @@
                 constraints = puzzleData.constraints || {};
                 thermometers = puzzleData.thermometers || [];
                 notesBoard = Array(9).fill().map(() => Array(9).fill().map(() => new Set()));
+                moveHistory = [];
+                updateBackButtonState();
                 createGrid();
                 document.getElementById('modal').classList.add('hidden');
                 messageArea.textContent = "Puzzle loaded successfully!";
@@ -392,6 +402,29 @@
             });
         }
         
+        // --- Move History & Undo Logic ---
+        function saveState() {
+            const state = {
+                currentBoard: currentBoard.map(row => [...row]),
+                notesBoard: notesBoard.map(row => row.map(cellNotes => new Set(cellNotes)))
+            };
+            moveHistory.push(state);
+            updateBackButtonState();
+        }
+
+        function undoMove() {
+            if (moveHistory.length === 0) return;
+            const lastState = moveHistory.pop();
+            currentBoard = lastState.currentBoard;
+            notesBoard = lastState.notesBoard;
+            createGrid(); // Redraw the entire grid based on the restored state
+            updateBackButtonState();
+        }
+
+        function updateBackButtonState() {
+            backBtn.disabled = moveHistory.length === 0;
+        }
+
         // --- Event Handlers & Logic ---
         function showNumpad(cell) {
             const rect = cell.getBoundingClientRect();
@@ -430,6 +463,7 @@
         function handleNoteInput(cell, r, c, number) {
             if (currentBoard[r][c] !== 0) return; 
 
+            saveState(); // Save state before changing notes
             const notes = notesBoard[r][c];
             if (notes.has(number)) {
                 notes.delete(number);
@@ -440,6 +474,9 @@
         }
 
         function handleNumberInput(cell, r, c, number) {
+            const oldBoardValue = currentBoard[r][c];
+            if (oldBoardValue === number) return; // No change, do nothing
+
             const tempBoard = currentBoard.map(row => [...row]);
             tempBoard[r][c] = number;
 
@@ -448,6 +485,7 @@
             if (validationMessage) {
                 messageArea.textContent = validationMessage;
             } else {
+                saveState(); // Save state before making a valid change
                 messageArea.textContent = '';
                 currentBoard[r][c] = number;
                 cell.querySelector('span').textContent = number === 0 ? '' : number;
