@@ -296,7 +296,6 @@
                 noteBtn.classList.add('numpad-btn', 'numpad-note');
                 noteBtn.addEventListener('click', () => {
                     handleNoteInput(activeCell, parseInt(activeCell.dataset.row), parseInt(activeCell.dataset.col), i);
-                    hideNumpad();
                 });
                 noteContainer.appendChild(noteBtn);
             }
