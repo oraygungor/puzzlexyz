@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku Oynayıcı</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .sudoku-grid {
+            display: grid;
+            grid-template-columns: repeat(9, minmax(0, 1fr));
+            grid-template-rows: repeat(9, minmax(0, 1fr));
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 1 / 1;
+            border: 3px solid #1f2937; /* gray-800 */
+            border-radius: 8px;
+            gap: 1px;
+            background-color: #374151; /* gray-700 */
+            position: relative;
+        }
+        .sudoku-cell {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f9fafb; /* gray-50 */
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: #3b82f6; /* blue-500 for user input */
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            border: 1px solid #d1d5db; /* gray-300 */
+            z-index: 1;
+        }
+        .given-cell {
+            font-weight: 700;
+            color: #1f2937; /* gray-800 for givens */
+            cursor: not-allowed;
+        }
+        .has-value .notes-container {
+            display: none;
+        }
+        .notes-container {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 2px;
+            pointer-events: none;
+        }
+        .note-digit {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.6rem;
+            color: #9ca3af; /* gray-400 */
+            font-weight: 600;
+        }
+        #thermo-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .tool-btn.active {
+            background-color: #60a5fa;
+            color: white;
+            border-color: #2563eb;
+        }
+        .mode-btn.active {
+            background-color: #f97316; /* orange-500 */
+            color: white;
+        }
+        .constraint-icon {
+            position: absolute;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+        }
+        .even-constraint { background-color: #fca5a5 !important; }
+        .odd-constraint { background-color: #93c5fd !important; }
+        .yellow-region { background-color: #fef08a !important; }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-lg mx-auto">
+        <h1 class="text-4xl font-bold text-center text-gray-800 mb-4">Sudoku Oynayıcı</h1>
+        
+        <p id="message-area" class="text-center text-red-600 mb-4 h-6 font-semibold"></p>
+
+        <div id="sudoku-board" class="sudoku-grid mx-auto shadow-lg">
+            <svg id="thermo-layer"></svg>
+        </div>
+
+        <div class="mt-4 text-center">
+            <h3 class="text-lg font-semibold text-gray-700">Giriş Araçları</h3>
+            <div class="flex justify-center flex-wrap items-center gap-2 my-2">
+                <div id="number-palette" class="flex justify-center flex-wrap gap-1 sm:gap-2"></div>
+                <button id="note-mode-btn" class="mode-btn px-4 py-2 h-12 bg-white text-gray-800 font-semibold rounded-md shadow-sm border">Not Modu</button>
+            </div>
+        </div>
+
+        <div class="flex justify-center flex-wrap gap-2 mt-4">
+            <button id="load-btn" class="px-6 py-2 bg-yellow-500 text-white font-semibold rounded-lg shadow-md hover:bg-yellow-600">Bulmacayı Yükle</button>
+            <button id="clear-btn" class="px-6 py-2 bg-gray-800 text-white font-semibold rounded-lg shadow-md hover:bg-gray-900">Girişleri Temizle</button>
+        </div>
+    </div>
+
+    <div id="modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 id="modal-title" class="text-2xl font-bold mb-4">Bulmaca Kodunu Yükle</h2>
+            <textarea id="modal-textarea" class="w-full h-32 p-2 border rounded-md mb-4 font-mono text-sm" placeholder="Bulmaca kodunuzu buraya yapıştırın..."></textarea>
+            <div class="flex justify-end space-x-2">
+                <button id="modal-action-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Bulmacayı Yükle</button>
+                <button id="modal-close-btn" class="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const boardElement = document.getElementById('sudoku-board');
+        const numberPalette = document.getElementById('number-palette');
+        const messageArea = document.getElementById('message-area');
+        const noteModeBtn = document.getElementById('note-mode-btn');
+        
+        // --- Game State ---
+        let givenBoard = [];
+        let currentBoard = [];
+        let notesBoard = [];
+        let constraints = {};
+        let thermometers = [];
+        let currentTool = 'number-1';
+        let isNoteMode = false;
+        const emptyBoard = Array(9).fill().map(() => Array(9).fill(0));
+
+        // --- Game Initialization ---
+        function init() {
+            givenBoard = emptyBoard.map(row => [...row]);
+            currentBoard = emptyBoard.map(row => [...row]);
+            notesBoard = Array(9).fill().map(() => Array(9).fill().map(() => new Set()));
+            constraints = {};
+            thermometers = [];
+            createGrid();
+            createNumberPalette();
+            addEventListeners();
+            setCurrentTool('number-1');
+            messageArea.textContent = 'Başlamak için bir bulmaca yükleyin!';
+        }
+
+        function addEventListeners() {
+            document.getElementById('load-btn').addEventListener('click', showLoadModal);
+            document.getElementById('clear-btn').addEventListener('click', () => {
+                if (window.confirm("Emin misiniz? Bu, tüm girişlerinizi ve notlarınızı temizleyecektir.")) {
+                    currentBoard = givenBoard.map(row => [...row]);
+                    notesBoard = Array(9).fill().map(() => Array(9).fill().map(() => new Set()));
+                    createGrid();
+                    messageArea.textContent = 'Tahta temizlendi.';
+                }
+            });
+            noteModeBtn.addEventListener('click', toggleNoteMode);
+            document.getElementById('modal-close-btn').addEventListener('click', () => document.getElementById('modal').classList.add('hidden'));
+            new ResizeObserver(drawThermometers).observe(boardElement);
+        }
+
+        // --- UI Creation ---
+        function createGrid() {
+            boardElement.innerHTML = '<svg id="thermo-layer"></svg>';
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('sudoku-cell');
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    
+                    const cellText = document.createElement('span');
+                    cell.appendChild(cellText);
+
+                    const notesContainer = document.createElement('div');
+                    notesContainer.classList.add('notes-container');
+                    cell.appendChild(notesContainer);
+
+                    const givenValue = givenBoard[r][c];
+                    const currentValue = currentBoard[r][c];
+
+                    if (givenValue !== 0) {
+                        cellText.textContent = givenValue;
+                        cell.classList.add('given-cell', 'has-value');
+                    } else {
+                        cell.addEventListener('click', () => handleCellClick(cell));
+                        if (currentValue !== 0) {
+                            cellText.textContent = currentValue;
+                            cell.classList.add('has-value');
+                        }
+                    }
+                    
+                    updateCellVisuals(cell, r, c);
+                    updateNotesVisuals(cell, r, c);
+                    boardElement.appendChild(cell);
+                }
+            }
+            requestAnimationFrame(drawThermometers);
+        }
+
+        function createNumberPalette() {
+            numberPalette.innerHTML = '';
+            for (let i = 1; i <= 9; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.id = `tool-number-${i}`;
+                button.classList.add('tool-btn', 'w-12', 'h-12', 'bg-white', 'text-gray-800', 'font-bold', 'rounded-md', 'shadow-sm', 'border');
+                button.addEventListener('click', () => setCurrentTool(`number-${i}`));
+                numberPalette.appendChild(button);
+            }
+            const eraser = document.createElement('button');
+            eraser.id = 'tool-number-0';
+            eraser.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>`;
+            eraser.classList.add('tool-btn', 'w-12', 'h-12', 'bg-white', 'text-gray-800', 'font-bold', 'rounded-md', 'shadow-sm', 'border');
+            eraser.addEventListener('click', () => setCurrentTool('number-0'));
+            numberPalette.appendChild(eraser);
+        }
+
+        function updateNotesVisuals(cell, r, c) {
+            const notesContainer = cell.querySelector('.notes-container');
+            if (!notesContainer) return;
+            notesContainer.innerHTML = '';
+            const notes = Array.from(notesBoard[r][c]).sort();
+            
+            const noteElements = Array(9).fill().map(() => {
+                const el = document.createElement('div');
+                el.classList.add('note-digit');
+                return el;
+            });
+
+            notes.forEach(note => {
+                if (note > 0 && note <= 9) {
+                    noteElements[note - 1].textContent = note;
+                }
+            });
+            
+            noteElements.forEach(el => notesContainer.appendChild(el));
+        }
+
+        // --- Load Logic ---
+        function loadPuzzleFromCode(code) {
+            try {
+                const puzzleData = JSON.parse(atob(code));
+                givenBoard = puzzleData.board || emptyBoard.map(row => [...row]);
+                currentBoard = givenBoard.map(row => [...row]);
+                constraints = puzzleData.constraints || {};
+                thermometers = puzzleData.thermometers || [];
+                notesBoard = Array(9).fill().map(() => Array(9).fill().map(() => new Set()));
+                createGrid();
+                document.getElementById('modal').classList.add('hidden');
+                messageArea.textContent = "Bulmaca başarıyla yüklendi!";
+            } catch (e) {
+                alert("Geçersiz bulmaca kodu.");
+            }
+        }
+
+        function showLoadModal() {
+            const modal = document.getElementById('modal');
+            const textarea = document.getElementById('modal-textarea');
+            textarea.value = '';
+            document.getElementById('modal-action-btn').onclick = () => loadPuzzleFromCode(textarea.value);
+            modal.classList.remove('hidden');
+        }
+        
+        // --- Thermometer Drawing ---
+        function drawThermometers() {
+            const svg = document.getElementById('thermo-layer');
+            if (!svg) return;
+            svg.innerHTML = '';
+            const cellElements = document.querySelectorAll('.sudoku-cell');
+            if (cellElements.length === 0 || cellElements[0].offsetWidth === 0) return;
+
+            const cellWidth = cellElements[0].offsetWidth;
+            const cellHeight = cellElements[0].offsetHeight;
+            const gap = 1;
+            const getCenter = (r, c) => ({ x: c * (cellWidth + gap) + cellWidth / 2, y: r * (cellHeight + gap) + cellHeight / 2 });
+            const transparentGreen = 'rgba(34, 197, 94, 0.4)';
+
+            thermometers.forEach(path => {
+                if (path.length === 0) return;
+                if (path.length > 1) {
+                    let pathString = `M ${getCenter(path[0][0], path[0][1]).x} ${getCenter(path[0][0], path[0][1]).y}`;
+                    for (let i = 1; i < path.length; i++) {
+                        pathString += ` L ${getCenter(path[i][0], path[i][1]).x} ${getCenter(path[i][0], path[i][1]).y}`;
+                    }
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    line.setAttribute('d', pathString);
+                    line.setAttribute('stroke', transparentGreen);
+                    line.setAttribute('stroke-width', cellWidth / 2);
+                    line.setAttribute('stroke-linecap', 'round');
+                    line.setAttribute('stroke-linejoin', 'round');
+                    line.setAttribute('fill', 'none');
+                    svg.appendChild(line);
+                }
+                const bulb = getCenter(path[0][0], path[0][1]);
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', bulb.x);
+                circle.setAttribute('cy', bulb.y);
+                circle.setAttribute('r', cellWidth / 2.5);
+                circle.setAttribute('fill', transparentGreen);
+                svg.appendChild(circle);
+            });
+        }
+        
+        // --- Event Handlers & Logic ---
+        function toggleNoteMode() {
+            isNoteMode = !isNoteMode;
+            noteModeBtn.classList.toggle('active', isNoteMode);
+        }
+
+        function setCurrentTool(toolName) {
+            currentTool = toolName;
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tool-${toolName}`).classList.add('active');
+        }
+
+        function handleCellClick(cell) {
+            const r = parseInt(cell.dataset.row);
+            const c = parseInt(cell.dataset.col);
+            const number = parseInt(currentTool.split('-')[1]);
+            
+            if (givenBoard[r][c] !== 0) return;
+
+            if (isNoteMode) {
+                handleNoteInput(cell, r, c, number);
+            } else {
+                handleNumberInput(cell, r, c, number);
+            }
+        }
+
+        function handleNoteInput(cell, r, c, number) {
+            if (currentBoard[r][c] !== 0) return; // Can't add notes to a cell with a value
+
+            const notes = notesBoard[r][c];
+            if (number === 0) { // Eraser clears all notes in cell
+                notes.clear();
+            } else {
+                if (notes.has(number)) {
+                    notes.delete(number);
+                } else {
+                    notes.add(number);
+                }
+            }
+            updateNotesVisuals(cell, r, c);
+        }
+
+        function handleNumberInput(cell, r, c, number) {
+            const tempBoard = currentBoard.map(row => [...row]);
+            tempBoard[r][c] = number;
+
+            const validationMessage = getValidationMessage(tempBoard, r, c, number);
+
+            if (validationMessage) {
+                messageArea.textContent = validationMessage;
+            } else {
+                messageArea.textContent = '';
+                currentBoard[r][c] = number;
+                cell.querySelector('span').textContent = number === 0 ? '' : number;
+
+                if (number !== 0) {
+                    cell.classList.add('has-value');
+                    notesBoard[r][c].clear();
+                    updateNotesVisuals(cell, r, c);
+                } else {
+                    cell.classList.remove('has-value');
+                }
+                checkWinCondition();
+            }
+        }
+        
+        function checkWinCondition() {
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (currentBoard[r][c] === 0) return;
+                }
+            }
+            messageArea.style.color = 'green';
+            messageArea.textContent = 'Tebrikler! Bulmacayı çözdünüz! 🎉';
+        }
+
+        // --- Sudoku Validation Logic ---
+        function getValidationMessage(board, row, col, num) {
+            if (num === 0) return null; 
+
+            // 1. Standard Sudoku: Row, Column, Box
+            for (let x = 0; x < 9; x++) {
+                if (x !== col && board[row][x] === num) return `Geçersiz: ${num} zaten bu satırda.`;
+                if (x !== row && board[x][col] === num) return `Geçersiz: ${num} zaten bu sütunda.`;
+            }
+            const startRow = row - row % 3, startCol = col - col % 3;
+            for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
+                if ((i + startRow !== row || j + startCol !== col) && board[i + startRow][j + startCol] === num) {
+                    return `Geçersiz: ${num} zaten bu 3x3 kutuda.`;
+                }
+            }
+
+            const key = `${row},${col}`;
+            const constraint = constraints[key];
+
+            // 2. Custom Constraints
+            if (constraint === 'even' && num % 2 !== 0) return `Geçersiz: Bu hücre çift olmalı.`;
+            if (constraint === 'odd' && num % 2 === 0) return `Geçersiz: Bu hücre tek olmalı.`;
+            if (constraint === 'yellow') {
+                for(let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) {
+                    if ((r !== row || c !== col) && constraints[`${r},${c}`] === 'yellow' && board[r][c] === num) {
+                        return `Geçersiz: ${num} zaten sarı bölgede.`;
+                    }
+                }
+            }
+            for (const thermo of thermometers) {
+                const thermoIndex = thermo.findIndex(p => p[0] === row && p[1] === col);
+                if (thermoIndex !== -1) {
+                    if (thermoIndex > 0) {
+                        const prevVal = board[thermo[thermoIndex-1][0]][thermo[thermoIndex-1][1]];
+                        if (prevVal !== 0 && num <= prevVal) return `Geçersiz: Termometrede ${prevVal}'den büyük olmalı.`;
+                    }
+                    if (thermoIndex < thermo.length - 1) {
+                        const nextVal = board[thermo[thermoIndex+1][0]][thermo[thermoIndex+1][1]];
+                        if (nextVal !== 0 && num >= nextVal) return `Geçersiz: Termometrede ${nextVal}'den küçük olmalı.`;
+                    }
+                }
+            }
+            const orthoDirections = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+            if (constraint === 'max') {
+                for (const [dr, dc] of orthoDirections) {
+                    const nr = row + dr, nc = col + dc;
+                    if (nr >= 0 && nr < 9 && nc >= 0 && nc < 9 && board[nr][nc] !== 0 && num <= board[nr][nc]) {
+                        return `Geçersiz: Bu 'Max' hücre komşusundan (${board[nr][nc]}) büyük olmalı.`;
+                    }
+                }
+            }
+            if (constraint === 'min') {
+                for (const [dr, dc] of orthoDirections) {
+                    const nr = row + dr, nc = col + dc;
+                    if (nr >= 0 && nr < 9 && nc >= 0 && nc < 9 && board[nr][nc] !== 0 && num >= board[nr][nc]) {
+                         return `Geçersiz: Bu 'Min' hücre komşusundan (${board[nr][nc]}) küçük olmalı.`;
+                    }
+                }
+            }
+             for (const [dr, dc] of orthoDirections) {
+                const nr = row + dr, nc = col + dc;
+                if (nr >= 0 && nr < 9 && nc >= 0 && nc < 9) {
+                    const neighborConstraint = constraints[`${nr},${nc}`];
+                    const neighborValue = board[nr][nc];
+                    if (neighborValue !== 0) {
+                        if (neighborConstraint === 'max' && neighborValue <= num) return `Geçersiz: Komşu 'Max' kuralını ihlal ediyor.`;
+                        if (neighborConstraint === 'min' && neighborValue >= num) return `Geçersiz: Komşu 'Min' kuralını ihlal ediyor.`;
+                    }
+                }
+            }
+
+            return null; // All checks passed
+        }
+        
+        // --- Visual Helpers ---
+        function updateCellVisuals(cell, r, c) {
+            const key = `${r},${c}`;
+            const constraint = constraints[key];
+            
+            const existingIcon = cell.querySelector('.constraint-icon');
+            if(existingIcon) cell.removeChild(existingIcon);
+
+            if (constraint === 'max') addVisual(cell, `<svg class="w-full h-full p-1" viewBox="0 0 24 24" fill="none" stroke="rgba(107, 114, 128, 0.5)" stroke-width="3" stroke-linecap="round"><path d="M12 4V20M4 12H20"/></svg>`);
+            else if (constraint === 'min') addVisual(cell, `<svg class="w-full h-full p-1" viewBox="0 0 24 24" fill="none" stroke="rgba(107, 114, 128, 0.5)" stroke-width="3" stroke-linecap="round"><path d="M4 12H20"/></svg>`);
+            else if (constraint === 'even') cell.classList.add('even-constraint');
+            else if (constraint === 'odd') cell.classList.add('odd-constraint');
+            else if (constraint === 'yellow') cell.classList.add('yellow-region');
+        }
+
+        function addVisual(cell, svgHtml) {
+            const icon = document.createElement('div');
+            icon.classList.add('constraint-icon');
+            icon.innerHTML = svgHtml;
+            cell.insertBefore(icon, cell.firstChild);
+        }
+        
+        // --- Start the game ---
+        window.onload = init;
+    </script>
+</body>
+</html>
