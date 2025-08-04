@@ -29,7 +29,7 @@
             justify-content: center;
             align-items: center;
             background-color: #f9fafb; /* gray-50 */
-            font-size: 1.5rem;
+            font-size: clamp(1rem, 4vw, 1.5rem); /* Responsive font size */
             font-weight: 500;
             color: #3b82f6; /* blue-500 for user input */
             cursor: pointer;
@@ -58,7 +58,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 0.6rem;
+            font-size: clamp(0.5rem, 2vw, 0.7rem); /* Responsive font size */
             color: #ef4444; /* red-500 */
             font-weight: 700; /* bold */
         }
@@ -67,15 +67,6 @@
             top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none;
             z-index: 2;
-        }
-        .tool-btn.active {
-            background-color: #60a5fa;
-            color: white;
-            border-color: #2563eb;
-        }
-        .mode-btn.active {
-            background-color: #f97316; /* orange-500 */
-            color: white;
         }
         .constraint-icon {
             position: absolute;
@@ -107,12 +98,49 @@
             max-width: 500px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
+        
+        /* Numpad Styles */
+        #numpad {
+            display: none;
+            position: absolute;
+            z-index: 50;
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #d1d5db;
+            padding: 0.5rem;
+            width: clamp(140px, 35vw, 180px); /* Responsive width */
+        }
+        .numpad-btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            aspect-ratio: 1 / 1; /* Make buttons square */
+        }
+        .numpad-btn:hover {
+            background-color: #f3f4f6;
+        }
+        .numpad-main {
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            font-weight: 600;
+            color: #3b82f6;
+        }
+        .numpad-note {
+            font-size: clamp(0.7rem, 3vw, 1rem);
+            font-weight: 700;
+            color: #ef4444;
+        }
+
     </style>
 </head>
-<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-2 sm:p-4">
 
     <div class="w-full max-w-lg mx-auto">
-        <h1 class="text-4xl font-bold text-center text-gray-800 mb-4">Sudoku Player</h1>
+        <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-800 mb-4">Sudoku Player</h1>
         
         <p id="message-area" class="text-center text-red-600 mb-4 h-6 font-semibold"></p>
 
@@ -123,48 +151,34 @@
         <!-- Legend -->
         <div id="legend" class="mt-4 p-3 bg-gray-200 rounded-lg shadow-inner">
             <h4 class="font-bold text-center text-lg text-gray-800 mb-2">Legend</h4>
-            <div class="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-sm">
-                <div class="flex items-center gap-2">
-                    <div class="w-5 h-5 bg-red-300 rounded-sm border border-gray-400"></div>
-                    <span>Even</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-5 h-5 bg-blue-300 rounded-sm border border-gray-400"></div>
-                    <span>Odd</span>
-                </div>
-                 <div class="flex items-center gap-2">
-                    <div class="w-5 h-5 bg-yellow-200 rounded-sm border border-gray-400"></div>
-                    <span>Unique Digits</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5V19M5 12H19"/></svg>
-                    <span>Max</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12H19"/></svg>
-                    <span>Min</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-green-600" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>
-                    <span>Thermometer</span>
-                </div>
+            <div class="flex flex-wrap justify-center items-center gap-x-2 sm:gap-x-4 gap-y-2 text-xs sm:text-sm">
+                <div class="flex items-center gap-2"><div class="w-5 h-5 bg-red-300 rounded-sm border border-gray-400"></div><span>Even</span></div>
+                <div class="flex items-center gap-2"><div class="w-5 h-5 bg-blue-300 rounded-sm border border-gray-400"></div><span>Odd</span></div>
+                <div class="flex items-center gap-2"><div class="w-5 h-5 bg-yellow-200 rounded-sm border border-gray-400"></div><span>Unique Digits</span></div>
+                <div class="flex items-center gap-2"><svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5V19M5 12H19"/></svg><span>Max</span></div>
+                <div class="flex items-center gap-2"><svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12H19"/></svg><span>Min</span></div>
+                <div class="flex items-center gap-2"><svg class="w-5 h-5 text-green-600" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg><span>Thermometer</span></div>
             </div>
         </div>
 
-        <div class="mt-4 text-center">
-            <h3 class="text-lg font-semibold text-gray-700">Input Tools</h3>
-            <div class="flex justify-center flex-wrap items-center gap-2 my-2">
-                <div id="number-palette" class="flex justify-center flex-wrap gap-1 sm:gap-2"></div>
-                <button id="note-mode-btn" class="mode-btn px-4 py-2 h-12 bg-white text-gray-800 font-semibold rounded-md shadow-sm border">Note Mode</button>
-            </div>
-        </div>
-
-        <div class="flex justify-center flex-wrap gap-2 mt-4">
+        <div class="flex justify-center flex-wrap gap-2 mt-8">
             <button id="load-btn" class="px-6 py-2 bg-yellow-500 text-white font-semibold rounded-lg shadow-md hover:bg-yellow-600">Load Puzzle</button>
             <button id="clear-btn" class="px-6 py-2 bg-gray-800 text-white font-semibold rounded-lg shadow-md hover:bg-gray-900">Clear Inputs</button>
         </div>
     </div>
 
+    <!-- Numpad Popup -->
+    <div id="numpad">
+        <div class="grid grid-cols-3 gap-1 mb-2">
+            <!-- Main numbers will be generated here -->
+        </div>
+        <div class="grid grid-cols-3 gap-1">
+            <!-- Note numbers will be generated here -->
+        </div>
+        <button id="numpad-erase" class="numpad-btn w-full mt-2 h-10 text-sm font-semibold">Erase</button>
+    </div>
+
+    <!-- Load Modal -->
     <div id="modal" class="modal-overlay hidden">
         <div class="modal-content">
             <h2 id="modal-title" class="text-2xl font-bold mb-4">Load Puzzle Code</h2>
@@ -179,9 +193,8 @@
     <script>
         // --- DOM Elements ---
         const boardElement = document.getElementById('sudoku-board');
-        const numberPalette = document.getElementById('number-palette');
         const messageArea = document.getElementById('message-area');
-        const noteModeBtn = document.getElementById('note-mode-btn');
+        const numpad = document.getElementById('numpad');
         
         // --- Game State ---
         let givenBoard = [];
@@ -189,8 +202,7 @@
         let notesBoard = [];
         let constraints = {};
         let thermometers = [];
-        let currentTool = 'number-1';
-        let isNoteMode = false;
+        let activeCell = null;
         const emptyBoard = Array(9).fill().map(() => Array(9).fill(0));
 
         // --- Game Initialization ---
@@ -201,9 +213,8 @@
             constraints = {};
             thermometers = [];
             createGrid();
-            createNumberPalette();
+            createNumpad();
             addEventListeners();
-            setCurrentTool('number-1');
             messageArea.textContent = 'Load a puzzle to begin!';
         }
 
@@ -217,9 +228,13 @@
                     messageArea.textContent = 'Board cleared.';
                 }
             });
-            noteModeBtn.addEventListener('click', toggleNoteMode);
             document.getElementById('modal-close-btn').addEventListener('click', () => document.getElementById('modal').classList.add('hidden'));
             new ResizeObserver(drawThermometers).observe(boardElement);
+            document.addEventListener('click', (e) => {
+                if (!numpad.contains(e.target) && activeCell && !activeCell.contains(e.target)) {
+                    hideNumpad();
+                }
+            });
         }
 
         // --- UI Creation ---
@@ -261,22 +276,36 @@
             requestAnimationFrame(drawThermometers);
         }
 
-        function createNumberPalette() {
-            numberPalette.innerHTML = '';
+        function createNumpad() {
+            const mainContainer = numpad.children[0];
+            const noteContainer = numpad.children[1];
+            mainContainer.innerHTML = '';
+            noteContainer.innerHTML = '';
+
             for (let i = 1; i <= 9; i++) {
-                const button = document.createElement('button');
-                button.textContent = i;
-                button.id = `tool-number-${i}`;
-                button.classList.add('tool-btn', 'w-12', 'h-12', 'bg-white', 'text-gray-800', 'font-bold', 'rounded-md', 'shadow-sm', 'border');
-                button.addEventListener('click', () => setCurrentTool(`number-${i}`));
-                numberPalette.appendChild(button);
+                const mainBtn = document.createElement('button');
+                mainBtn.textContent = i;
+                mainBtn.classList.add('numpad-btn', 'numpad-main');
+                mainBtn.addEventListener('click', () => {
+                    handleNumberInput(activeCell, parseInt(activeCell.dataset.row), parseInt(activeCell.dataset.col), i);
+                    hideNumpad();
+                });
+                mainContainer.appendChild(mainBtn);
+
+                const noteBtn = document.createElement('button');
+                noteBtn.textContent = i;
+                noteBtn.classList.add('numpad-btn', 'numpad-note');
+                noteBtn.addEventListener('click', () => {
+                    handleNoteInput(activeCell, parseInt(activeCell.dataset.row), parseInt(activeCell.dataset.col), i);
+                    hideNumpad();
+                });
+                noteContainer.appendChild(noteBtn);
             }
-            const eraser = document.createElement('button');
-            eraser.id = 'tool-number-0';
-            eraser.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>`;
-            eraser.classList.add('tool-btn', 'w-12', 'h-12', 'bg-white', 'text-gray-800', 'font-bold', 'rounded-md', 'shadow-sm', 'border');
-            eraser.addEventListener('click', () => setCurrentTool('number-0'));
-            numberPalette.appendChild(eraser);
+            
+            document.getElementById('numpad-erase').addEventListener('click', () => {
+                 handleNumberInput(activeCell, parseInt(activeCell.dataset.row), parseInt(activeCell.dataset.col), 0);
+                 hideNumpad();
+            });
         }
 
         function updateNotesVisuals(cell, r, c) {
@@ -366,43 +395,57 @@
         }
         
         // --- Event Handlers & Logic ---
-        function toggleNoteMode() {
-            isNoteMode = !isNoteMode;
-            noteModeBtn.classList.toggle('active', isNoteMode);
-        }
+        function showNumpad(cell) {
+            const rect = cell.getBoundingClientRect();
+            const boardRect = boardElement.getBoundingClientRect();
+            
+            numpad.style.display = 'block';
+            const numpadWidth = numpad.offsetWidth;
+            const numpadHeight = numpad.offsetHeight;
 
-        function setCurrentTool(toolName) {
-            currentTool = toolName;
-            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`tool-${toolName}`).classList.add('active');
+            // Default position below the cell
+            let top = rect.bottom;
+            let left = rect.left + (rect.width / 2) - (numpadWidth / 2);
+
+            // Adjust if it goes off-screen
+            if (left < 0) {
+                left = 5; // Add a small margin
+            }
+            if (left + numpadWidth > window.innerWidth) {
+                left = window.innerWidth - numpadWidth - 5;
+            }
+            if (top + numpadHeight > window.innerHeight) {
+                top = rect.top - numpadHeight;
+            }
+            
+            numpad.style.top = `${top}px`;
+            numpad.style.left = `${left}px`;
+        }
+        
+        function hideNumpad() {
+            numpad.style.display = 'none';
+            activeCell = null;
         }
 
         function handleCellClick(cell) {
-            const r = parseInt(cell.dataset.row);
-            const c = parseInt(cell.dataset.col);
-            const number = parseInt(currentTool.split('-')[1]);
+            if (givenBoard[parseInt(cell.dataset.row)][parseInt(cell.dataset.col)] !== 0) return;
             
-            if (givenBoard[r][c] !== 0) return;
-
-            if (isNoteMode) {
-                handleNoteInput(cell, r, c, number);
+            if (activeCell === cell) {
+                hideNumpad();
             } else {
-                handleNumberInput(cell, r, c, number);
+                activeCell = cell;
+                showNumpad(cell);
             }
         }
 
         function handleNoteInput(cell, r, c, number) {
-            if (currentBoard[r][c] !== 0) return; // Can't add notes to a cell with a value
+            if (currentBoard[r][c] !== 0) return; 
 
             const notes = notesBoard[r][c];
-            if (number === 0) { // Eraser clears all notes in cell
-                notes.clear();
+            if (notes.has(number)) {
+                notes.delete(number);
             } else {
-                if (notes.has(number)) {
-                    notes.delete(number);
-                } else {
-                    notes.add(number);
-                }
+                notes.add(number);
             }
             updateNotesVisuals(cell, r, c);
         }
