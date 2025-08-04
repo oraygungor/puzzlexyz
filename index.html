@@ -257,15 +257,14 @@
                     const givenValue = givenBoard[r][c];
                     const currentValue = currentBoard[r][c];
 
-                    if (givenValue !== 0) {
-                        cellText.textContent = givenValue;
-                        cell.classList.add('given-cell', 'has-value');
+                    if (currentValue !== 0) {
+                         cellText.textContent = currentValue;
+                         cell.classList.add('has-value');
+                         if (givenValue !== 0) {
+                            cell.classList.add('given-cell');
+                         }
                     } else {
-                        cell.addEventListener('click', () => handleCellClick(cell));
-                        if (currentValue !== 0) {
-                            cellText.textContent = currentValue;
-                            cell.classList.add('has-value');
-                        }
+                         cell.addEventListener('click', () => handleCellClick(cell));
                     }
                     
                     updateCellVisuals(cell, r, c);
@@ -397,26 +396,17 @@
         // --- Event Handlers & Logic ---
         function showNumpad(cell) {
             const rect = cell.getBoundingClientRect();
-            const boardRect = boardElement.getBoundingClientRect();
             
             numpad.style.display = 'block';
             const numpadWidth = numpad.offsetWidth;
             const numpadHeight = numpad.offsetHeight;
 
-            // Default position below the cell
             let top = rect.bottom;
             let left = rect.left + (rect.width / 2) - (numpadWidth / 2);
 
-            // Adjust if it goes off-screen
-            if (left < 0) {
-                left = 5; // Add a small margin
-            }
-            if (left + numpadWidth > window.innerWidth) {
-                left = window.innerWidth - numpadWidth - 5;
-            }
-            if (top + numpadHeight > window.innerHeight) {
-                top = rect.top - numpadHeight;
-            }
+            if (left < 0) left = 5;
+            if (left + numpadWidth > window.innerWidth) left = window.innerWidth - numpadWidth - 5;
+            if (top + numpadHeight > window.innerHeight) top = rect.top - numpadHeight;
             
             numpad.style.top = `${top}px`;
             numpad.style.left = `${left}px`;
@@ -484,26 +474,20 @@
             messageArea.textContent = 'Congratulations! You solved the puzzle! 🎉';
         }
 
-        // --- Sudoku Validation Logic ---
+        // --- User Validation Logic ---
         function getValidationMessage(board, row, col, num) {
             if (num === 0) return null; 
 
-            // 1. Standard Sudoku: Row, Column, Box
+            // Row and Column check
             for (let x = 0; x < 9; x++) {
                 if (x !== col && board[row][x] === num) return `Invalid: ${num} is already in this row.`;
                 if (x !== row && board[x][col] === num) return `Invalid: ${num} is already in this column.`;
-            }
-            const startRow = row - row % 3, startCol = col - col % 3;
-            for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
-                if ((i + startRow !== row || j + startCol !== col) && board[i + startRow][j + startCol] === num) {
-                    return `Invalid: ${num} is already in this 3x3 box.`;
-                }
             }
 
             const key = `${row},${col}`;
             const constraint = constraints[key];
 
-            // 2. Custom Constraints
+            // Custom constraints check
             if (constraint === 'even' && num % 2 !== 0) return `Invalid: This cell must be even.`;
             if (constraint === 'odd' && num % 2 === 0) return `Invalid: This cell must be odd.`;
             if (constraint === 'yellow') {
@@ -555,7 +539,7 @@
                 }
             }
 
-            return null; // All checks passed
+            return null;
         }
         
         // --- Visual Helpers ---
